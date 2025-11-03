@@ -35,8 +35,16 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.THIRD_PARTY_TOKEN }}
 
       # ✅ Install dependencies (now .npmrc is picked)
-      - name: Install dependencies
-        run: npm install --force
+
+      - name: Clean install (avoid rollup cache issue)
+        run:  |
+          rm -rf node_modules package-lock.json
+          npm cache clean --force
+          npm install --legacy-peer-deps
+
+      - name: Force install rollup (workaround for npm 10 bug)
+        run: |
+          npm install rollup @rollup/rollup-linux-x64-gnu --save-dev    
 
       # ✅ Install Angular CLI globally
       - name: Install Angular CLI
