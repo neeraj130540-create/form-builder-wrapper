@@ -28,7 +28,7 @@ jobs:
         run: |
           echo "@instantsys-labs:registry=https://npm.pkg.github.com" > ~/.npmrc
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.THIRD_PARTY_TOKEN }}" >> ~/.npmrc
-          cp ~/.npmrc .npmrc   # ✅ ADD THIS LINE (ensures npm picks it inside workspace)
+          cp ~/.npmrc .npmrc
 
       # ✅ Verify npm authentication
       - name: Verify npm auth
@@ -51,31 +51,28 @@ jobs:
       - name: Install Angular CLI
         run: npm install -g @angular/cli
 
-      # ✅ Bump version (only locally, before build)
-      - name: Bump patch version
+      # ✅ Bump patch version inside fx-builder-wrapper
+      - name: Bump version (patch)
         run: |
-          current_version=$(node -p "require('./projects/fx-builder-wrapper/package.json').version")
+          cd projects/fx-builder-wrapper
+          current_version=$(node -p "require('./package.json').version")
           new_version=$(npm version patch --no-git-tag-version | tail -n 1)
           echo "Version bumped from $current_version to $new_version"
           echo "NEW_VERSION=$new_version" >> $GITHUB_ENV
 
-      # ✅ Build Angular library
+      # ✅ Build Angular library (uses updated version)
       - name: Build library
         run: ng build fx-builder-wrapper
 
-      # ✅ Update built dist version (after build)
-      - name: Update dist version
+      # ✅ Publish built package
+      - name: Publish package
         run: |
           cd dist/fx-builder-wrapper
-          npm version $NEW_VERSION --no-git-tag-version
-
-      # ✅ Publish built package to GitHub Packages
-      - name: Publish package
-        run: cd dist/fx-builder-wrapper && npm publish
+          npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # ✅ Commit version bump back to repo (optional but recommended)
+      # ✅ Commit bumped version back to repo
       - name: Commit bumped version
         run: |
           git config user.name "github-actions"
