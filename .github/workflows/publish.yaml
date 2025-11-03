@@ -46,3 +46,4 @@ jobs:
         run: cd dist/instantsys-labs/fx && npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
