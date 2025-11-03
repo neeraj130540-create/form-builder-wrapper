@@ -1,4 +1,4 @@
-name: Fx Package Build
+name: Publish Fx Form Builder Wrapper
 
 on:
   push:
@@ -13,32 +13,48 @@ jobs:
       packages: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
           registry-url: https://npm.pkg.github.com/
+          scope: "@neeraj130540-create"
 
+      # ✅ Configure .npmrc with both tokens
       - name: Configure npm authentication
         run: |
           echo "@instantsys-labs:registry=https://npm.pkg.github.com" > ~/.npmrc
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.THIRD_PARTY_TOKEN }}" >> ~/.npmrc
+          echo "@neeraj130540-create:registry=https://npm.pkg.github.com" >> ~/.npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
           cp ~/.npmrc .npmrc
 
-      - name: Verify npm auth
+      # ✅ Verify both tokens
+      - name: Verify third-party npm auth
         run: npm whoami --registry=https://npm.pkg.github.com/
         env:
           NODE_AUTH_TOKEN: ${{ secrets.THIRD_PARTY_TOKEN }}
 
+      - name: Verify self publish auth
+        run: npm whoami --registry=https://npm.pkg.github.com/
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ✅ Install dependencies (using third-party token)
       - name: Install dependencies
         run: npm install --force
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.THIRD_PARTY_TOKEN }}
 
-      - name: Build library
-        run: ng build fx-builder-wrapper
+      # ✅ Build the Angular library
+      - name: Build Angular library
+        run: npx ng build fx-form-builder-wrapper
 
+      # ✅ Publish the package
       - name: Publish package
-        run: cd dist/instantsys-labs/fx && npm publish
+        run: cd dist/neeraj130540-create/fx-form-builder-wrapper && npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
