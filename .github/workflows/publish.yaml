@@ -1,4 +1,4 @@
-name: Publish Fx Form Builder Wrapper
+name: Fx Package Build
 
 on:
   push:
@@ -13,48 +13,37 @@ jobs:
       packages: write
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
           registry-url: https://npm.pkg.github.com/
-          scope: "@neeraj130540-create"
 
-      # ✅ Configure .npmrc with both tokens
+      # ✅ Inject .npmrc dynamically with secret
       - name: Configure npm authentication
         run: |
           echo "@instantsys-labs:registry=https://npm.pkg.github.com" > ~/.npmrc
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.THIRD_PARTY_TOKEN }}" >> ~/.npmrc
-          echo "@neeraj130540-create:registry=https://npm.pkg.github.com" >> ~/.npmrc
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
-          cp ~/.npmrc .npmrc
 
-      # ✅ Verify both tokens
-      - name: Verify third-party npm auth
+      # ✅ Debug check (safe)
+      - name: Verify npm auth
         run: npm whoami --registry=https://npm.pkg.github.com/
         env:
           NODE_AUTH_TOKEN: ${{ secrets.THIRD_PARTY_TOKEN }}
 
-      - name: Verify self publish auth
-        run: npm whoami --registry=https://npm.pkg.github.com/
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # ✅ Install dependencies (using third-party token)
+      # Install dependencies
       - name: Install dependencies
         run: npm install --force
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.THIRD_PARTY_TOKEN }}
 
-      # ✅ Build the Angular library
-      - name: Build Angular library
-        run: npx ng build fx-form-builder-wrapper
+      # Build library
+      - name: Build library
+        run: ng build fx-builder-wrapper
 
-      # ✅ Publish the package
+      # Publish built package
       - name: Publish package
-        run: cd dist/neeraj130540-create/fx-form-builder-wrapper && npm publish
+        run: cd dist/fx-builder-wrapper && npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
