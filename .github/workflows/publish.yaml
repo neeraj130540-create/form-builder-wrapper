@@ -13,47 +13,40 @@ jobs:
       packages: write
 
     steps:
-      # ✅ Step 1: Checkout repository
       - uses: actions/checkout@v4
 
-      # ✅ Step 2: Setup Node.js and registry
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
           registry-url: https://npm.pkg.github.com/
 
-      # ✅ Step 3: Inject .npmrc dynamically with secret (for third-party access)
+      # ✅ Inject token into BOTH home and workspace .npmrc
       - name: Configure npm authentication
         run: |
           echo "@instantsys-labs:registry=https://npm.pkg.github.com" > ~/.npmrc
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.THIRD_PARTY_TOKEN }}" >> ~/.npmrc
+          cp ~/.npmrc .npmrc   # ✅ ADD THIS LINE (THE FIX)
 
-      # ✅ Step 4: Verify token works (safe)
-      - name: Verify npm authentication
+      # ✅ Debug check (safe)
+      - name: Verify npm auth
         run: npm whoami --registry=https://npm.pkg.github.com/
         env:
           NODE_AUTH_TOKEN: ${{ secrets.THIRD_PARTY_TOKEN }}
 
-      # ✅ Step 5: Install dependencies
+      # ✅ Install dependencies (now .npmrc is picked)
       - name: Install dependencies
         run: npm install --force
 
-      # ✅ Step 6: Install Angular CLI (needed for ng build)
+      # ✅ Install Angular CLI globally
       - name: Install Angular CLI
         run: npm install -g @angular/cli
-
-      # ✅ Step 7: Build the Angular library
+        
+      # ✅ Build library
       - name: Build library
         run: ng build fx-builder-wrapper
 
-      # ✅ Step 8: Configure npmrc for publishing to your own repo
-      - name: Configure GitHub npm authentication
-        run: |
-          echo "@neeraj130540-create:registry=https://npm.pkg.github.com" > ~/.npmrc
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
-
-      # ✅ Step 9: Publish the built package
+      # ✅ Publish built package
       - name: Publish package
         run: cd dist/fx-builder-wrapper && npm publish
         env:
