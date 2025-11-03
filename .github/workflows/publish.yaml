@@ -21,11 +21,12 @@ jobs:
           node-version: 20
           registry-url: https://npm.pkg.github.com/
 
-      # ✅ Inject .npmrc dynamically with secret
+      # ✅ Inject token into BOTH home and workspace .npmrc
       - name: Configure npm authentication
         run: |
           echo "@instantsys-labs:registry=https://npm.pkg.github.com" > ~/.npmrc
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.THIRD_PARTY_TOKEN }}" >> ~/.npmrc
+          cp ~/.npmrc .npmrc   # ✅ ADD THIS LINE (THE FIX)
 
       # ✅ Debug check (safe)
       - name: Verify npm auth
@@ -33,17 +34,16 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.THIRD_PARTY_TOKEN }}
 
-      # Install dependencies
+      # ✅ Install dependencies (now .npmrc is picked)
       - name: Install dependencies
         run: npm install --force
 
-      # Build library
+      # ✅ Build library
       - name: Build library
         run: ng build fx-builder-wrapper
 
-      # Publish built package
+      # ✅ Publish built package
       - name: Publish package
         run: cd dist/fx-builder-wrapper && npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
