@@ -11,60 +11,27 @@ jobs:
     permissions:
       contents: read
       packages: write
-
     steps:
-      # ✅ Checkout repo
       - uses: actions/checkout@v4
-
-      # ✅ Setup Node.js
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           registry-url: https://npm.pkg.github.com/
+      - run: npm install --force
 
-      # 🧠 Debug: List initial files
-      - name: List repo files before injection
-        run: |
-          echo "=== Listing repo root files ==="
-          ls -la
+      # Install nx globally if not installed in the project
+      # - run: npm install -g
 
-      # 🧩 Inject third-party token from GitHub Secrets
-      - name: Inject third-party token into .npmrc
+      # Build common library
+      - run: ng build fx-builder-wrapper
+
+      # Generate CSS
+      # - run: npm run build-css
+      # - run: cp -r dist/css dist/instantsys-labs/fx/
+
+      # Publish common library
+      - run: cd dist/fx-builder-wrapper && npm publish
         env:
-          THIRD_PARTY_TOKEN: ${{ secrets.THIRD_PARTY_TOKEN }}
-        run: |
-          echo "=== Injecting THIRD_PARTY_TOKEN into .npmrc ==="
-          if [ -f ".npmrc" ]; then
-            sed -i "s|\${THIRD_PARTY_TOKEN}|$THIRD_PARTY_TOKEN|g" .npmrc
-            echo "Token injected successfully."
-          else
-            echo "❌ .npmrc file not found in repo root!"
-            exit 1
-          fi
+          NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
-      # 🧠 Debug: Verify token injection (safe)
-      - name: Verify .npmrc injection (token masked)
-        run: |
-          echo "=== Checking .npmrc content safely ==="
-          if grep "_authToken" .npmrc; then
-            echo "✅ Token line found!"
-          else
-            echo "⚠️ Token line missing!"
-          fi
-          echo ""
-          echo "=== Masked .npmrc content ==="
-          sed 's/[A-Za-z0-9_\-]\{20,\}/***TOKEN_REDACTED***/g' .npmrc
-
-      # ⚙️ Install dependencies (will now authenticate)
-      - name: Install dependencies
-        run: npm install --force
-
-      # 🏗️ Build Angular library
-      - name: Build library
-        run: ng build fx-builder-wrapper
-
-      # 🚀 Publish package to GitHub Packages
-      - name: Publish package
-        run: cd dist/instantsys-labs/fx && npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+ 
