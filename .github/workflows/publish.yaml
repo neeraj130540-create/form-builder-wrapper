@@ -19,17 +19,28 @@ jobs:
           node-version: 20
           registry-url: https://npm.pkg.github.com/
 
-      # Replace token placeholder with real one for this job only
+      # Show current directory for debugging
+      - run: pwd && ls -a
+
+      # 🧩 Replace token placeholder with GitHub secret
       - name: Inject third-party token
-        run: sed -i "s|\${THIRD_PARTY_TOKEN}|${{ secrets.THIRD_PARTY_TOKEN }}|g" .npmrc
+        env:
+          THIRD_PARTY_TOKEN: ${{ secrets.THIRD_PARTY_TOKEN }}
+        run: |
+          echo "Injecting third-party token into .npmrc..."
+          sed -i "s|\${THIRD_PARTY_TOKEN}|$THIRD_PARTY_TOKEN|g" .npmrc
+          echo ".npmrc after injection:"
+          cat .npmrc
 
-      # Install dependencies (including private third-party library)
-      - run: npm install --force
+      # 🧠 Install dependencies (will now authenticate properly)
+      - name: Install dependencies
+        run: npm install --force
 
-      # Build your Angular library
+      # 🏗️ Build your Angular library
       - run: ng build fx-builder-wrapper
 
-      # Publish to GitHub Packages using your repo token
-      - run: cd dist/fx-builder-wrapper && npm publish
+      # 🚀 Publish to GitHub Packages
+      - name: Publish package
+        run: cd dist/instantsys-labs/fx && npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
